@@ -1,0 +1,143 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Mooseware.CantorInABox</RootNamespace>
+    <ApplicationIcon>Resources\ChetIcon.ico</ApplicationIcon>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Title>CantorInABox</Title>
+    <Version>2.0.0</Version>
+    <Company>Mooseware</Company>
+    <Description>Audio file playlist builder and player with pitch, tempo, pan and volume controls, including via an HTTP API</Description>
+    <Copyright>Copyright Mooseware Ltd 2025</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AudioProgram.cs" />
+    <Compile Remove="Command.cs" />
+    <Compile Remove="Settings.cs" />
+    <Compile Remove="SoundProcessorViewModel.cs" />
+    <Compile Remove="StatusMessage.cs" />
+    <Compile Remove="Track.cs" />
+    <Compile Remove="TrackList.cs" />
+    <Compile Remove="ViewModels\MainViewModel.cs" />
+    <Compile Remove="ViewModels\OldTrackViewModel.cs" />
+    <Compile Remove="ViewModels\TrackListViewModel.cs" />
+    <Compile Remove="ViewModels\TrackPageNumber.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Add-Audio-Button-Icon.png" />
+    <None Remove="Resources\asterisk.png" />
+    <None Remove="Resources\check_24x19.png" />
+    <None Remove="Resources\edit_40x40.png" />
+    <None Remove="Resources\folder_stroke_24x24.png" />
+    <None Remove="Resources\Include-Audio-Button-Icon.png" />
+    <None Remove="Resources\list_16x14.png" />
+    <None Remove="Resources\minus_24x6.png" />
+    <None Remove="Resources\New-Playlist-Button-Icon.png" />
+    <None Remove="Resources\next.png" />
+    <None Remove="Resources\nonext.png" />
+    <None Remove="Resources\noprev.png" />
+    <None Remove="Resources\Open-Playlist-Button-Icon.png" />
+    <None Remove="Resources\paused.png" />
+    <None Remove="Resources\playing.png" />
+    <None Remove="Resources\plus_24x24.png" />
+    <None Remove="Resources\prev.png" />
+    <None Remove="Resources\preview.png" />
+    <None Remove="Resources\Remove-Audio-Button-Icon.png" />
+    <None Remove="Resources\Reset-Button-Icon-40x40.png" />
+    <None Remove="Resources\Save-Playlist-As-Button-Icon.png" />
+    <None Remove="Resources\Save-Playlist-Button-Icon.png" />
+    <None Remove="Resources\Track-Tweaks-Icon-40x40.png" />
+    <None Remove="Resources\Warning-80x80.png" />
+    <None Remove="Resources\x_21x21.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="Themes\Templates\LibraryEntryDataTemplate.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Add-Audio-Button-Icon.png" />
+    <Resource Include="Resources\asterisk.png" />
+    <Resource Include="Resources\check_24x19.png" />
+    <Resource Include="Resources\ChetIcon.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\edit_40x40.png" />
+    <Resource Include="Resources\folder_stroke_24x24.png" />
+    <Resource Include="Resources\Include-Audio-Button-Icon.png" />
+    <Resource Include="Resources\list_16x14.png" />
+    <Resource Include="Resources\minus_24x6.png" />
+    <Resource Include="Resources\New-Playlist-Button-Icon.png" />
+    <Resource Include="Resources\next.png" />
+    <Resource Include="Resources\nonext.png" />
+    <Resource Include="Resources\noprev.png" />
+    <Resource Include="Resources\Open-Playlist-Button-Icon.png" />
+    <Resource Include="Resources\paused.png" />
+    <Resource Include="Resources\playing.png" />
+    <Resource Include="Resources\plus_24x24.png" />
+    <Resource Include="Resources\prev.png" />
+    <Resource Include="Resources\preview.png" />
+    <Resource Include="Resources\Remove-Audio-Button-Icon.png" />
+    <Resource Include="Resources\Reset-Button-Icon-40x40.png" />
+    <Resource Include="Resources\Save-Playlist-As-Button-Icon.png" />
+    <Resource Include="Resources\Save-Playlist-Button-Icon.png" />
+    <Resource Include="Resources\Track-Tweaks-Icon-40x40.png" />
+    <Resource Include="Resources\Warning-80x80.png" />
+    <Resource Include="Resources\x_21x21.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="TagLibSharp" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SoundTouch.Net.NAudioSupport.Core\SoundTouch.Net.NAudioSupport.Core.csproj" />
+    <ProjectReference Include="..\SoundTouch.Net\SoundTouch.Net.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="JSNet">
+      <HintPath>..\packages\JSNet.dll</HintPath>
+      <Private>True</Private>
+      <Aliases>global</Aliases>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Themes\Templates\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,28 @@
+﻿<Application x:Class="Mooseware.CantorInABox.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Mooseware.CantorInABox">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- UI Element Styles -->
+                <ResourceDictionary Source="Themes/Styles/AppStyles.xaml" />
+                <!-- Control Styles -->
+                <!--<ResourceDictionary Source="Themes/Styles/RadioButtonToggleStyle.xaml" />-->
+                <ResourceDictionary Source="Themes/Styles/ButtonStyle.xaml" />
+                <ResourceDictionary Source="Themes/Styles/RunButtonStyle.xaml" />
+                <ResourceDictionary Source="Themes/Styles/TabItemStyle.xaml" />
+                <ResourceDictionary Source="Themes/Styles/GroupBoxStyle.xaml" />
+                <!--<ResourceDictionary Source="Themes/Styles/PasswordBoxStyle.xaml" />-->
+                <!--<ResourceDictionary Source="Themes/Styles/LightEmittingDiodeStyle.xaml" />-->
+                <ResourceDictionary Source="Themes/Styles/CheckboxStyle.xaml" />
+                <!--<ResourceDictionary Source="Themes/Styles/ListViewStyle.xaml" />-->
+                <ResourceDictionary Source="Themes/Styles/ScrollBarStyle.xaml" />
+                <ResourceDictionary Source="Themes/Styles/ComboBoxStyle.xaml" />
+                <ResourceDictionary Source="Themes/Styles/SliderStyle.xaml" />
+                <!-- Data Templates -->
+                <!--<ResourceDictionary Source="Themes/Templates/LibraryEntryDataTemplate.xaml" />-->
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

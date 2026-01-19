@@ -1,0 +1,31 @@
+﻿===================================
+  Cantor in a Box - Release Notes
+===================================
+
+Cantor in a Box (CantorInABox.exe) is a specialized MP3 player for use by service leaders who need electronic musical accompaniment.
+For information about Cantor in a Box, contact Joel Brown at Mooseware Ltd (www.mooseware.ca).
+
+Release 2.0.0 - 2025-xx-xx - Beta: Remotely Controllable Release
+----------------------------------------------------------------
+- Improved: Modernized to current utility packages
+- New: Added the ability to control the application using a REST(like) HTTP API for most major commands that would be of interest during the performance of a worship service.
+- New: Restructured libraries to be a distinct list of tracks with title and rendition properties using a .CIBLIB file extension.
+- New: Restructured playlists to be references to library entries rather than explicit .mp3/.wav filespecs. This allows properties stored in the library to be applied to playlist items. New playlists use the .CIBPLF file extension.
+- New: Added individual, playlist persisted, adjustments for pitch, pan and volume to playlist tracks.
+- New: Added tempo adjustment to playlist properties and the playback
+
+Release 1.0.4 - 2013-07-05 - Usability Improvement Release
+----------------------------------------------------------
+- Improved: On initial install, the most recently used library and playlist files will not be set.  This was confusing for some users.  The application now includes the typical default PLF library and playlist files as part of its configuration information.  If the MRU list is not available then the program will look for the typical defaults and open the first ones that it finds.
+- Improved: If a .plf file (Library or Playlist) is moved or copied from one computer to another, the relative paths between the .plf file and the tracks it contains can become disconnected.  This renders the tracks unplayable, since the program doesn't know where to find them.  If this happens now, the program will ask the user to find the current location of the track and the .plf file will be updated appropriately.
+
+Release 1.0.3 - 2013-06-25 - Bug Fix Release
+--------------------------------------------
+- Fix: Playback doesn't advance automatically to the last track.  When the second last track finishes playing the play head was not advancing to the last track and had to be cued manually.
+- Fix: New playlist doesn't show up on the Playback tab.  When a brand new playlist is created, (rather than one loaded on the Playlist tab from a .plf file) the tracks in the playlist did not appear on the playback tab until the track list was manually scrolled by pressing the down arrow.
+- Fix: File association playlist loading.  The .plf extension is properly associated with CantorInABox.exe but double clicking a .plf file does not load the file into the Playlist tab as expected.  Instead the most recently used playlist (if any) is loaded on the Playlist tab.
+
+Known Issues:
+------------
+The following are know bugs as of the current release:
+- None?  They must be in there.  Please find them and report them!

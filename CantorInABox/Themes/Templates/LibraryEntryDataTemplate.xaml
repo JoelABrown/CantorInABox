@@ -1,0 +1,50 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Mooseware.CantorInABox.ViewModels"
+                    x:Class="Mooseware.CantorInABox.ViewModels.PrimeViewModel">
+    <DataTemplate x:Key="LibraryTrackDataTemplate"
+                  DataType="{x:Type local:LibraryEntryViewModel}">
+        <Border Background="Gainsboro"
+                BorderBrush="Transparent"
+                BorderThickness="1"
+                Margin="0"
+                Padding="0 3 0 3">
+            <Border Background="Cornsilk"
+                    BorderBrush="Maroon"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Margin="0">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Left"
+                               HorizontalAlignment="Left">
+                        <CheckBox IsChecked="{Binding Selected}"
+                                  Margin="5 6 5 0" />
+                        <Label Content="{Binding Title}" />
+                        <!--FontWeight="{Binding Selected, Converter={StaticResource BoldConverter}}"-->
+                    </DockPanel>
+                    <DockPanel DockPanel.Dock="Right"
+                               HorizontalAlignment="Right">
+                        <Label Content="["
+                               Padding="10 4 0 4" />
+                        <Label Content="{Binding FormattedLength}"
+                               FontWeight="Normal" />
+                        <Label Content="]"
+                               Padding="0 4 0 4" />
+                        <Button Click="PreviewButton_Click"
+                                Margin="20 0 10 0"
+                                Height="20">
+                            <!--Style="{DynamicResource NoChromeButton}"-->
+                            <Image Source="Resources/preview.png" />
+                            <Button.ToolTip>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock FontWeight="Bold"><Run Text="Preview" /></TextBlock>
+                                    <TextBlock><Run Text="Click to hear this track. Click again to stop the preview." /></TextBlock>
+                                </StackPanel>
+                            </Button.ToolTip>
+                        </Button>
+                    </DockPanel>
+                </DockPanel>
+            </Border>
+        </Border>
+    </DataTemplate>
+</ResourceDictionary>
