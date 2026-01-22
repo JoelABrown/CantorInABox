@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Mooseware.CantorInABox.Configuration;
 using Mooseware.CantorInABox.Models;
 using Mooseware.CantorInABox.ViewModels;
 using System.Collections.Concurrent;
@@ -22,6 +24,7 @@ namespace Mooseware.CantorInABox;
 public partial class MainWindow : Window
 {
     // TODO: Test the snot out of stuff once the general cleanup is completed to make sure nothing is (newly) broken
+    // TODO: Fix bug where if there is no playlist loaded at startup adding the playback tab never clues in that playlist is loaded later
     // TODO: Consider making pan HTTP APIs do an offset trick with pan and volume (where room exists) so more voice is not less guitar
     //       Note that this might imply a default volume of less than 100% (e.g. 70%) to give headroom for more vol as there is less guitar.
     // TODO: Sort out bug with playlist drag and drop not reflecting right away, especially on the Playlist
@@ -36,6 +39,11 @@ public partial class MainWindow : Window
     /// Host for listening to HTTP API calls (for example, from a Companion-powered Stream Deck)
     /// </summary>
     private readonly IHost _host;
+
+    /// <summary>
+    /// Application settings loaded from the appsettings.json file at application startup
+    /// </summary>
+    private readonly AppSettings _appSettings;
 
     /// <summary>
     /// The queue of messages being received via the HTTP API
@@ -66,7 +74,7 @@ public partial class MainWindow : Window
     /// Base constructor for the MainWindow
     /// </summary>
     /// <param name="msgQueue">ConcurrentQueue<ApiMessage> for the HTTP API injected via DI</param>
-    public MainWindow(ConcurrentQueue<ApiMessage> msgQueue)
+    public MainWindow(ConcurrentQueue<ApiMessage> msgQueue, IOptions<Configuration.AppSettings> appSettings)
     {
         InitializeComponent();
 
@@ -79,6 +87,9 @@ public partial class MainWindow : Window
         // Set the local reference to the (singleton) ConcurrentQueue for the UI thread.
         _messageQueue = msgQueue;
 
+        // Get a DI reference to the appsettings.json configuration data
+        _appSettings = appSettings.Value;
+
         // Set up the heartbeat time that watches for incoming HTTP requests
         _heartbeat = new DispatcherTimer
         {
@@ -87,21 +98,21 @@ public partial class MainWindow : Window
         _heartbeat.Tick += Heartbeat_Tick;
 
         // Restore any settings from the previous session and load application settings...
-        Properties.Settings.Default.Reload();
+        Config.User.Reload();
 
         // Set the limits on playback setting sliders based on application settings.
-        _primeViewModel.PitchFloor = Properties.Settings.Default.PitchFloor;
-        _primeViewModel.PitchCeiling = Properties.Settings.Default.PitchCeiling;
-        _primeViewModel.PanFloor = Properties.Settings.Default.PanFloor;
-        _primeViewModel.PanCeiling = Properties.Settings.Default.PanCeiling;
-        _primeViewModel.TempoFloor = Properties.Settings.Default.TempoFloor;
-        _primeViewModel.TempoCeiling = Properties.Settings.Default.TempoCeiling;
-        _primeViewModel.VolumeFloor = Properties.Settings.Default.VolumeFloor;
-        _primeViewModel.VolumeCeiling = Properties.Settings.Default.VolumeCeiling;
+        _primeViewModel.PitchFloor = _appSettings.PitchFloor;
+        _primeViewModel.PitchCeiling = _appSettings.PitchCeiling;
+        _primeViewModel.PanFloor = _appSettings.PanFloor;
+        _primeViewModel.PanCeiling = _appSettings.PanCeiling;
+        _primeViewModel.TempoFloor = _appSettings.TempoFloor;
+        _primeViewModel.TempoCeiling = _appSettings.TempoCeiling;
+        _primeViewModel.VolumeFloor = _appSettings.VolumeFloor;
+        _primeViewModel.VolumeCeiling = _appSettings.VolumeCeiling;
 
         //Get the base URL for .UseUrls() from the App.config settings file
-        string webApiRootUrl = Properties.Settings.Default.WebApiUrlRoot;
-        string webApiUrlPort = Properties.Settings.Default.WebApiUrlPort;
+        string webApiRootUrl = _appSettings.WebApiUrlRoot;
+        string webApiUrlPort = _appSettings.WebApiUrlPort;
         
         // Create the background Web API server running within this WPF app...
         var builder = Host.CreateDefaultBuilder()
@@ -136,7 +147,7 @@ public partial class MainWindow : Window
             // Save settings for the next visit...
             if (_primeViewModel.CurrentLibrary is not null)
             {
-                Properties.Settings.Default.LastLibraryFile = _primeViewModel.CurrentLibrary.Filespec;
+                Config.User.LastLibraryFile = _primeViewModel.CurrentLibrary.Filespec;
             }
             System.Collections.Specialized.StringCollection knowLibFiles = [];
             foreach (var item in _primeViewModel.KnownLibraries)
@@ -146,16 +157,16 @@ public partial class MainWindow : Window
                     knowLibFiles.Add(item.Filespec);
                 }
             }
-            Properties.Settings.Default.KnownLibraries = knowLibFiles;
+            Config.User.KnownLibraries = knowLibFiles;
 
             // Save the last open playlist file to settings as the app is shutting down
             if (_primeViewModel.CurrentPlaylist is not null)
             {
-                Properties.Settings.Default.LastPlaylistFile = _primeViewModel.CurrentPlaylist.Filespec;
+                Config.User.LastPlaylistFile = _primeViewModel.CurrentPlaylist.Filespec;
             }
 
             // Persist the settings updates
-            Properties.Settings.Default.Save();
+            Config.User.Save();
 
             // Dispose of the previewer. (the full playback device will handle itself in the GC)
             //_playback?.Dispose();
@@ -586,8 +597,8 @@ public partial class MainWindow : Window
             {
                 _primeViewModel.Prayerbooks[i] = new();
             }
-            var listOfBookSettings = Properties.Settings.Default.BookNames;
-            if (listOfBookSettings.Count == 3)
+            var listOfBookSettings = _appSettings.BookNames;
+            if (listOfBookSettings.Length == 3)
             {
                 _primeViewModel.Prayerbooks =
                     [new BookCodeViewModel(0, listOfBookSettings[0] ?? "Book A"),
@@ -608,7 +619,7 @@ public partial class MainWindow : Window
             // Load the list of last-known libraries
             _primeViewModel.KnownLibraries.Clear();
             _primeViewModel.OpenLibraries.Clear();
-            var lastKnownLibraryFiles = Properties.Settings.Default.KnownLibraries;
+            var lastKnownLibraryFiles = Config.User.KnownLibraries;
             if (lastKnownLibraryFiles is not null && lastKnownLibraryFiles.Count > 0)
             {
                 foreach (var libFilespec in lastKnownLibraryFiles)
@@ -622,7 +633,7 @@ public partial class MainWindow : Window
             KnownLibraryListComboBox.ItemsSource = _primeViewModel.KnownLibraries;
 
             // On startup, select the last used library, if it is loaded...
-            string lastLoadedLibraryFilespec = Properties.Settings.Default.LastLibraryFile;
+            string lastLoadedLibraryFilespec = Config.User.LastLibraryFile;
             if (lastLoadedLibraryFilespec.Length > 0)
             {
                 // Is this one of the known (and valid) libraries?
@@ -636,7 +647,7 @@ public partial class MainWindow : Window
             }
 
             // Open the last used playlist, if it can be found.
-            string lastLoadedPlaylistFilespec = Properties.Settings.Default.LastPlaylistFile;
+            string lastLoadedPlaylistFilespec = Config.User.LastPlaylistFile;
             _primeViewModel.OpenPlaylistFile(lastLoadedPlaylistFilespec);
 
             // Select the first track of the playlist, if one is found...

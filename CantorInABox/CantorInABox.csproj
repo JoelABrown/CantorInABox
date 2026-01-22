@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="appsettings.json" />
     <None Remove="Resources\Add-Audio-Button-Icon.png" />
     <None Remove="Resources\asterisk.png" />
     <None Remove="Resources\check_24x19.png" />
@@ -61,6 +62,12 @@
 
   <ItemGroup>
     <Page Remove="Themes\Templates\LibraryEntryDataTemplate.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

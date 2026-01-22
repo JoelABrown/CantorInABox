@@ -23,6 +23,7 @@ public partial class App : Application
         AppHost = (IHost?)Host.CreateDefaultBuilder()
         .ConfigureServices((hostContext, services) =>
         {
+            services.Configure<Configuration.AppSettings>(hostContext.Configuration.GetSection("ApplicationSettings"));
             services.AddSingleton<MainWindow>();
             services.AddSingleton<ConcurrentQueue<ApiMessage>>();
         })
