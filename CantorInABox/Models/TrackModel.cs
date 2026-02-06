@@ -1,4 +1,5 @@
-﻿using System.Xml.Serialization;
+﻿using Mooseware.CantorInABox.Configuration;
+using System.Xml.Serialization;
 
 namespace Mooseware.CantorInABox.Models;
 
@@ -40,7 +41,7 @@ public class TrackModel
     /// <summary>
     /// The track-specific override tempo value to use (if the use override flag is true)
     /// </summary>
-    public double PanOverride { get; set; } = AudioPlayback.PanDefault;
+    public double PanOverride { get; set; }
     /// <summary>
     /// Whether to use the playlist default volume (false) or a track-specific value (true)
     /// </summary>
@@ -48,11 +49,21 @@ public class TrackModel
     /// <summary>
     /// The track-specific override volume value to use (if the use override flag is true)
     /// </summary>
-    public double VolumeOverride { get; set; } = AudioPlayback.VolumeDefault;
+    public double VolumeOverride { get; set; }
+
+    /// <summary>
+    /// Application settings used to configure the app at startup
+    /// </summary>
+    private AppSettings? _appSettings;
 
     public TrackModel()
     {
-        
+            
+    }
+
+    public void SetAppSettings(AppSettings appSettings)
+    {
+        _appSettings = appSettings;
     }
 
     /// <summary>
@@ -68,7 +79,7 @@ public class TrackModel
     /// </summary>
     public void ResetOverridePan()
     {
-        PanOverride = AudioPlayback.PanDefault;
+        PanOverride = _appSettings!.PanDefault;
     }
 
     /// <summary>
@@ -84,6 +95,6 @@ public class TrackModel
     /// </summary>
     public void ResetOverrideVolume()
     {
-        VolumeOverride = AudioPlayback.VolumeDefault;
+        VolumeOverride = _appSettings!.VolumeDefault / 100.0;
     }
 }

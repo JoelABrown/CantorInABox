@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.Wpf;
 using Mooseware.CantorInABox.Configuration;
 using Mooseware.CantorInABox.Models;
 using Mooseware.CantorInABox.ViewModels;
@@ -25,12 +27,9 @@ public partial class MainWindow : Window
 {
     // TODO: Test the snot out of stuff once the general cleanup is completed to make sure nothing is (newly) broken
     // TODO: Fix bug where if there is no playlist loaded at startup adding the playback tab never clues in that playlist is loaded later
-    // TODO: Consider making pan HTTP APIs do an offset trick with pan and volume (where room exists) so more voice is not less guitar
-    //       Note that this might imply a default volume of less than 100% (e.g. 70%) to give headroom for more vol as there is less guitar.
     // TODO: Sort out bug with playlist drag and drop not reflecting right away, especially on the Playlist
     //       or at least being sorted out by the time the playlist tab is activated.
     // TODO: Consider saving pointer to current track (for playback) on exit & restoring (see: trackindex)
-    // TODO: Fix the editability of the new track after adding to the library bug
     // TODO: Consider context-sensitive starup tab: Libraries if none loaded, Playlist if none loaded, Playback if playlist IS loaded
     // TODO: Build a setup project for deployment
     // TODO: Download and install VS2026 and upgrade to .NET 10
@@ -61,7 +60,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _heartbeat;
 
     /// <summary>
-    /// The main/root view model for interacting with the user interface
+    /// The main/root webView model for interacting with the user interface
     /// </summary>
     private readonly PrimeViewModel _primeViewModel = new();
 
@@ -78,6 +77,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // Get a DI reference to the appsettings.json configuration data
+        _appSettings = appSettings.Value;
+
+        // Initialize the prime webView model.
+        _primeViewModel.SetAppSettings(_appSettings);
+
         // Hook up the data context...
         this.DataContext = _primeViewModel;
 
@@ -86,9 +91,6 @@ public partial class MainWindow : Window
 
         // Set the local reference to the (singleton) ConcurrentQueue for the UI thread.
         _messageQueue = msgQueue;
-
-        // Get a DI reference to the appsettings.json configuration data
-        _appSettings = appSettings.Value;
 
         // Set up the heartbeat time that watches for incoming HTTP requests
         _heartbeat = new DispatcherTimer
@@ -322,8 +324,6 @@ public partial class MainWindow : Window
                 }
                 break;
             case ApiMessageVerb.Volume:
-                // TODO: Read the API volume increment from a settings file at startup
-                double volumeIncrement = 5.0;
                 switch (message.Parameters)
                 {
                     case ApiMessage.VolumeQuieter:
@@ -331,8 +331,8 @@ public partial class MainWindow : Window
                         if (_primeViewModel.CurrentPlaylistTrack is not null
                          && _primeViewModel.CurrentPlaylistTrack.EffectiveVolume > 0.0)
                         {
-                            double currentVolume = _primeViewModel.CurrentPlaylistTrack.EffectiveVolume ?? 100.0;
-                            double newVolume = Math.Max(0.0, currentVolume - volumeIncrement);
+                            double currentVolume = _primeViewModel.CurrentPlaylistTrack.EffectiveVolume ?? _appSettings.VolumeDefault;
+                            double newVolume = Math.Max(_appSettings.VolumeFloor, currentVolume - _appSettings.VolumeIncrement);
                             _primeViewModel.CurrentPlaylistTrack.VolumeOverride = newVolume;
                             // If the track is using the playlist default, then we need to turn the override on.
                             if (_primeViewModel.CurrentPlaylistTrack.UseVolumeOverride == false)
@@ -348,10 +348,10 @@ public partial class MainWindow : Window
                     case ApiMessage.VolumeLouder:
                         flashMessage = "Volume: louder";
                         if (_primeViewModel.CurrentPlaylistTrack is not null
-                         && _primeViewModel.CurrentPlaylistTrack.EffectiveVolume < 100.0)
+                         && _primeViewModel.CurrentPlaylistTrack.EffectiveVolume < _appSettings.VolumeCeiling)
                         {
-                            double currentVolume = _primeViewModel.CurrentPlaylistTrack.EffectiveVolume ?? 100.0;
-                            double newVolume = Math.Min(100.0, currentVolume + volumeIncrement);
+                            double currentVolume = _primeViewModel.CurrentPlaylistTrack.EffectiveVolume ?? _appSettings.VolumeDefault;
+                            double newVolume = Math.Min(_appSettings.VolumeCeiling, currentVolume + _appSettings.VolumeIncrement);
                             _primeViewModel.CurrentPlaylistTrack.VolumeOverride = newVolume;
                             // If the track is using the playlist default, then we need to turn the override on.
                             if (_primeViewModel.CurrentPlaylistTrack.UseVolumeOverride == false)
@@ -385,22 +385,32 @@ public partial class MainWindow : Window
                 }
                 break;
             case ApiMessageVerb.Pan:
-                // TODO: Read the API pan increment from a settings file at startup
-                double panIncrement = 0.1;
                 switch (message.Parameters)
                 {
                     case ApiMessage.PanMoreVoice:
                         flashMessage = "Pan: more voice";
                         if (_primeViewModel.CurrentPlaylistTrack is not null
-                         && _primeViewModel.CurrentPlaylistTrack.EffectivePan > -1.0)
+                         && _primeViewModel.CurrentPlaylistTrack.EffectivePan >= _appSettings.PanFloor)
                         {
-                            double currentPan = _primeViewModel.CurrentPlaylistTrack.EffectivePan ?? 0.0;
-                            double newPan = Math.Max(-1.0, currentPan - panIncrement);
+                            double currentPan = _primeViewModel.CurrentPlaylistTrack.EffectivePan ?? _appSettings.PanDefault;
+                            double newPan = Math.Max(_appSettings.PanFloor, currentPan - _appSettings.PanIncrement);
                             _primeViewModel.CurrentPlaylistTrack.PanOverride = newPan;
                             // If the track is using the playlist default, then we need to turn the override on.
                             if (_primeViewModel.CurrentPlaylistTrack.UsePanOverride == false)
                             {
                                 _primeViewModel.CurrentPlaylistTrack.UsePanOverride = true;
+                            }
+                            // TODO: When panning for more voice, increase the volume if there is headroom
+                            if (newPan < currentPan)
+                            {
+                                double currentVolume = _primeViewModel.CurrentPlaylistTrack.EffectiveVolume ?? _appSettings.VolumeDefault;
+                                double newVolume = Math.Min(_appSettings.VolumeCeiling, currentVolume + (_appSettings.VolumeIncrement * _appSettings.PanVolumeSwap));
+                                _primeViewModel.CurrentPlaylistTrack.VolumeOverride = newVolume;
+                                // If the track is using the playlist default, then we need to turn the override on.
+                                if (_primeViewModel.CurrentPlaylistTrack.UseVolumeOverride == false)
+                                {
+                                    _primeViewModel.CurrentPlaylistTrack.UseVolumeOverride = true;
+                                }
                             }
                         }
                         else
@@ -411,15 +421,27 @@ public partial class MainWindow : Window
                     case ApiMessage.PanMoreInstrument:
                         flashMessage = "Pan: more instrument";
                         if (_primeViewModel.CurrentPlaylistTrack is not null
-                         && _primeViewModel.CurrentPlaylistTrack.EffectivePan < 1.0)
+                         && _primeViewModel.CurrentPlaylistTrack.EffectivePan < _appSettings.PanCeiling)
                         {
-                            double currentPan = _primeViewModel.CurrentPlaylistTrack.EffectivePan ?? 0.0;
-                            double newPan = Math.Min(1.0, currentPan + panIncrement);
+                            double currentPan = _primeViewModel.CurrentPlaylistTrack.EffectivePan ?? _appSettings.PanDefault;
+                            double newPan = Math.Min(_appSettings.PanCeiling, currentPan + _appSettings.PanIncrement);
                             _primeViewModel.CurrentPlaylistTrack.PanOverride = newPan;
                             // If the track is using the playlist default, then we need to turn the override on.
                             if (_primeViewModel.CurrentPlaylistTrack.UsePanOverride == false)
                             {
                                 _primeViewModel.CurrentPlaylistTrack.UsePanOverride = true;
+                            }
+                            // TODO: When panning for more instrument (less voice), decrease the volume within reason
+                            if (newPan > currentPan)
+                            {
+                                double currentVolume = _primeViewModel.CurrentPlaylistTrack.EffectiveVolume ?? _appSettings.VolumeDefault;
+                                double newVolume = Math.Max(_appSettings.VolumeFloor, currentVolume - (_appSettings.VolumeIncrement * _appSettings.PanVolumeSwap));
+                                _primeViewModel.CurrentPlaylistTrack.VolumeOverride = newVolume;
+                                // If the track is using the playlist default, then we need to turn the override on.
+                                if (_primeViewModel.CurrentPlaylistTrack.UseVolumeOverride == false)
+                                {
+                                    _primeViewModel.CurrentPlaylistTrack.UseVolumeOverride = true;
+                                }
                             }
                         }
                         else
@@ -612,6 +634,7 @@ public partial class MainWindow : Window
                      new BookCodeViewModel(1, "Book B"),
                      new BookCodeViewModel(2, "Book C")];
             }
+            _primeViewModel.SetPrayerBookNames();
 
             // NOTE: Make sure that the App.Config has been loaded (in the ctor)
             //       before trying to read the settings in the following code...
@@ -982,16 +1005,16 @@ public partial class MainWindow : Window
                     };
                     LibraryEntryViewModel newEntryVM = new(newEntry);
 
-                    // Add it to the open libraries list and refresh the current library view model...
+                    // Add it to the open libraries list and refresh the current library webView model...
                     Guid currentLibraryKey = (Guid)_primeViewModel.CurrentLibrary.LibraryKey!;
                     _primeViewModel.OpenLibraries[currentLibraryKey].Entries.Add(newEntryVM);
 
-                    // Refresh the current library view model.
+                    // Refresh the current library webView model.
                     // DWR: For some reason, if this isn't done, then the new added track isn't editable in the GUI?!?!?
                     _primeViewModel.CurrentLibrary = null;
                     _primeViewModel.CurrentLibrary = _primeViewModel.OpenLibraries[currentLibraryKey];
 
-                    // Refresh the CurrentItem view model...
+                    // Refresh the CurrentItem webView model...
                     _primeViewModel.CurrentLibraryEntry = null;
                     if (_primeViewModel.CurrentLibrary.Entries.Count > 0)
                     {
@@ -1218,6 +1241,7 @@ public partial class MainWindow : Window
             {
                 Title = "(New Playlist)"
             };
+            newPlaylistModel.SetAppSettings(_appSettings);
             // Finish setting up the dialog and 
             dlg.Filter = "Playlist Files (*.cibplf)|*.cibplf";
             dlg.FilterIndex = 0;
@@ -1228,7 +1252,7 @@ public partial class MainWindow : Window
                 string newPlaylistFilespec = dlg.FileName!;
                 // Persist the file...
                 PlaylistModel.SavePlaylistFile(newPlaylistModel, newPlaylistFilespec);
-                PlaylistViewModel playlistViewModel = new(newPlaylistModel,_primeViewModel);
+                PlaylistViewModel playlistViewModel = new(newPlaylistModel,_primeViewModel,_appSettings);
                 // Make it the current playlist...
                 _primeViewModel.CurrentPlaylist = playlistViewModel;
             }
@@ -1528,4 +1552,138 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    private void LibraryPrintButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_primeViewModel.CurrentLibrary is not null)
+        {
+            // Read the CSS from the print.css file distributed with this app.
+            string loadedCss = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "library.css")).Replace("\r\n", string.Empty);
+
+            StringBuilder sb = new();
+            sb.Append("<html><head><title>Cantor In A Box Library - " + (_primeViewModel.CurrentLibrary.Title ?? "CantorInABox-Library") + "</title><style>");
+            sb.Append(loadedCss);
+            if ((LibraryPrintIncludeFileNamesCheckbox.IsChecked ?? false) == false)
+            {
+                sb.Append("div.file {display: none;} span.withfiles {display: none;}");
+            }
+            sb.Append("</style></head><body>");
+
+            // Assemble the libary listing content
+            sb.Append("<h1>Cantor In A Box Library</h1>");
+            sb.Append("<section id=\"head\">");
+            sb.Append("<div>Title:</div>");
+            sb.Append("<div id=\"title\">" + _primeViewModel.CurrentLibrary.Title + "</div>");
+            sb.Append("<div>Description:</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentLibrary.Description + "</div>");
+            sb.Append("<div>File:</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentLibrary.Filespec + "</div>");
+            sb.Append("</section>");
+            sb.Append("<section id=\"entries\">");
+            sb.Append("<h1>Entries</h1>");
+            sb.Append("<div class=\"entrylist\">");
+            sb.Append("<div>Title - Rendition <span class=\"withfiles\"> ( / <em>.mp3 file name</em>)</span></div>");
+            sb.Append("<div>Length</div>");
+            sb.Append("<div>" + _primeViewModel.Prayerbooks[0].Name + "</div>");
+            sb.Append("<div>" + _primeViewModel.Prayerbooks[1].Name + "</div>");
+            sb.Append("<div>" + _primeViewModel.Prayerbooks[2].Name + "</div>");
+            sb.Append("<div class=\"file\">File Name</div>");
+
+            foreach (var entry in _primeViewModel.CurrentLibrary.Entries)
+            {
+                sb.Append("<div>" + entry.Title + " - " + entry.Rendition + "</div>");
+                sb.Append("<div>" + entry.FormattedLength + "</div>");
+                sb.Append("<div>" + entry.PagesBookA + "</div>");
+                sb.Append("<div>" + entry.PagesBookB + "</div>");
+                sb.Append("<div>" + entry.PagesBookC + "</div>");
+                sb.Append("<div class=\"file\">" + entry.Filespec + "</div>");
+            }
+            // Wrap up the document.
+            sb.Append("</div></section></body></html>");
+
+            string printFile = Path.GetTempFileName();
+            printFile = Path.ChangeExtension(printFile, ".html");
+            File.WriteAllText(printFile, sb.ToString());
+
+            // Send the output to the webview for printing.
+            // When it's fully loaded the Print_NavigationCompleted event will fire and open the print dialog.
+            PrintWebView.Source = new Uri(printFile);
+        }
+    }
+
+    private void PlaylistPrintButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_primeViewModel.CurrentPlaylist is not null)
+        {
+            // Read the CSS from the print.css file distributed with this app.
+            string loadedCss = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "playlist.css")).Replace("\r\n", string.Empty);
+
+            StringBuilder sb = new();
+            sb.Append("<html><head><title>Cantor In A Box Playlist - " + (_primeViewModel.CurrentPlaylist.Title ?? "CantorInABox-Playlist") + "</title><style>");
+            sb.Append(loadedCss);
+            sb.Append("</style></head><body>");
+
+            // Assemble the playlist content
+            sb.Append("<h1>Cantor In A Box Playlist</h1>");
+            sb.Append("<section id=\"head\">");
+            sb.Append("<div>Title:</div>");
+            sb.Append("<div id=\"title\">" + _primeViewModel.CurrentPlaylist.Title + "</div>");
+            sb.Append("<div>Description:</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentPlaylist.Description + "</div>");
+            sb.Append("<div>File:</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentPlaylist.Filespec + "</div>");
+            sb.Append("<div>Book:</div>");
+            sb.Append("<div>" + _primeViewModel.Prayerbooks[_primeViewModel.CurrentPlaylist.DefaultBook].Name + "</div>");
+            sb.Append("</section>");
+            sb.Append("<section id=\"tracks\">");
+            sb.Append("<h1>Entries</h1>");
+            sb.Append("<div class=\"tracklist\">");
+            sb.Append("<div>Title</div>");
+            sb.Append("<div>Rendition</div>");
+            sb.Append("<div>Page</div>");
+            sb.Append("<div>Pitch</div>");
+            sb.Append("<div>Tempo</div>");
+            sb.Append("<div>Pan (V/G)</div>");
+            sb.Append("<div>Volume</div>");
+            sb.Append("<div>&nbsp;</div>");
+            sb.Append("<div>&nbsp;</div>");
+            sb.Append("<div>Defaults:</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentPlaylist.DefaultPitchDescription + "</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentPlaylist.DefaultTempoDescription + "</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentPlaylist.DefaultPanDescription + "</div>");
+            sb.Append("<div>" + _primeViewModel.CurrentPlaylist.DefaultVolumeDescription + "</div>");
+
+            foreach (var track in _primeViewModel.CurrentPlaylist.Tracks)
+            {
+                sb.Append("<div>" + track.Title + "</div>");
+                sb.Append("<div>" + track.Rendition + "</div>");
+                sb.Append("<div>" + track.ShownPages + "</div>");
+                sb.Append("<div>" + track.EffectivePitchDescription + "</div>");
+                sb.Append("<div>" + track.EffectiveTempoDescription + "</div>");
+                sb.Append("<div>" + track.EffectivePanDescription + "</div>");
+                sb.Append("<div>" + track.EffectiveVolumeDescription + "</div>");
+            }
+            // Wrap up the document.
+            sb.Append("</div></section></body></html>");
+
+            string printFile = Path.GetTempFileName();
+            printFile = Path.ChangeExtension(printFile, ".html");
+            File.WriteAllText(printFile, sb.ToString());
+
+            // Send the output to the webview for printing.
+            // When it's fully loaded the Print_NavigationCompleted event will fire and open the print dialog.
+            PrintWebView.Source = new Uri(printFile);
+        }
+    }
+
+    private void PrintWebView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+    {
+        // Make sure nothing went wrong.
+        if (e.IsSuccess && sender is WebView2 webView)
+        {
+            // Show the print dialog so the user can complete the printing operation.
+            webView.CoreWebView2.ShowPrintUI(CoreWebView2PrintDialogKind.System);
+        }
+    }
+
 }

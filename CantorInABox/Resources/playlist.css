@@ -1,0 +1,87 @@
+﻿*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+* {
+    inset: 0;
+}
+
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+}
+
+p, h1 {
+    overflow-wrap: break-word;
+}
+
+h1 {
+    font-size: 1.25em;
+}
+
+h1:has(+ .tracklist) {
+    margin-bottom: 0;
+}
+
+#head {
+    display: grid;
+    grid-template-columns: min-content auto;
+    column-gap: 1em;
+    div:nth-of-type(2) {
+        grid-column: 2;
+    }
+    div:nth-of-type(2n+1) {
+        grid-column: 1;
+    }
+    div#title {
+        font-weight: bold
+    }
+}
+
+div.tracklist {
+    display: grid;
+    grid-template-columns: max-content fit-content(300px) max-content max-content min-content max-content min-content;
+    > div {
+        padding: 0.25em;
+    }
+    justify-items: stretch; 
+    > div:nth-child(-n+7) {
+        font-weight: bold;
+        border-bottom: 2px solid;
+    }
+    column-gap: 0.25em; 
+    > div:nth-child(n+8):nth-child(-n+14) {
+        font-style: italic;
+        border-bottom: 1px solid;
+    }
+    > div:nth-child(7n+4) {
+        text-align: center;
+    }
+    > div:nth-child(7n+5) {
+        text-align: center;
+    }
+    > div:nth-child(7n+6) {
+        text-align: center;
+    }
+    > div:nth-child(7n+7) {
+        text-align: center;
+    }
+}
+
+@media print {
+    @page {
+        size: letter portrait;
+        margin: 0.3in 0.5in;
+    }
+
+    body {
+        font-size: 11pt;
+        min-height: unset;
+    }
+
+    h1 {
+        font-size: 14pt;
+    }
+}

@@ -31,6 +31,10 @@ public class AppSettings
     /// </summary>
     public float PanCeiling { get; set; } = 1.0f;
 
+    public float PanDefault { get; set; } = 0.5f;
+
+    public float PanIncrement { get; set; } = 0.1f;
+
     /// <summary>
     /// The lowest end of the legal range for tempo as an integer percentage (% * 100) of original
     /// </summary>
@@ -50,6 +54,12 @@ public class AppSettings
     /// The top of the legal volume range as an integer percentage (% * 100) of original
     /// </summary>
     public float VolumeCeiling { get; set; } = 100.0f;
+
+    public float VolumeDefault { get; set; } = 70.0f;
+
+    public float VolumeIncrement { get; set; } = 5.0f;
+
+    public float PanVolumeSwap { get; set; } = -1.0f;
 
     /// <summary>
     /// The base of the URL for the HTTP Web API

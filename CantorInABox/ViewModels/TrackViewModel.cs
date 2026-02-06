@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mooseware.CantorInABox.Configuration;
 using Mooseware.CantorInABox.Models;
 using System.Windows;
 using System.Windows.Threading;
@@ -257,22 +258,20 @@ public partial class TrackViewModel : ObservableObject
     private List<BookCodeViewModel> _prayerBooks = [];
 
     /// <summary>
-    /// Establish a new instance and set key properties
+    /// Application settings used to configure the app at startup
     /// </summary>
-    public TrackViewModel()     
-    {
-        SyncFromModel();
-        UpdateHasTrackTweaks();
-        EstablishPlaybackClockTimer();
-    }
+    private AppSettings? _appSettings;
+
     /// <summary>
     /// Establish a new instance and set key properties
     /// </summary>
     /// <param name="model">Reference to the TrackModel to bind to this view model</param>
     /// <param name="playlist">Reference to the containing play list view model</param>
-    public TrackViewModel(TrackModel model, PlaylistViewModel playlist)
+    public TrackViewModel(TrackModel model, PlaylistViewModel playlist, AppSettings appSettings)
     {
+        _appSettings = appSettings;
         _model = model;
+        _model.SetAppSettings(appSettings);
         ParentPlaylist = playlist;
         SyncFromModel();
         UpdateHasTrackTweaks();
@@ -284,9 +283,11 @@ public partial class TrackViewModel : ObservableObject
     /// </summary>
     /// <param name="libraryKey">The ID of the Library from which the Entry comes</param>
     /// <param name="libraryEntryKey">The ID of the Entry itself</param>
-    public TrackViewModel(Guid libraryKey, Guid libraryEntryKey, PlaylistViewModel playlist)
+    public TrackViewModel(Guid libraryKey, Guid libraryEntryKey, PlaylistViewModel playlist, AppSettings appSettings)
     {
+        _appSettings = appSettings;
         _model = new();
+        _model.SetAppSettings(appSettings);
         ParentPlaylist = playlist;
         LibraryKey = libraryKey;
         LibraryEntryKey = libraryEntryKey;
@@ -313,7 +314,6 @@ public partial class TrackViewModel : ObservableObject
         _playbackDevice = audioPlayback;
         _primeViewModel = primeViewModel;
         RefreshTransportFlags();
-        ////RefreshCurrentTrackVisuals();
     }
     /// <summary>
     /// Provides access to the underlying model of this track
@@ -509,18 +509,18 @@ public partial class TrackViewModel : ObservableObject
         }
         else
         {
-            EffectivePan = ParentPlaylist?.PanDefault ?? AudioPlayback.PanDefault;
+            EffectivePan = ParentPlaylist?.PanDefault ?? _appSettings!.PanDefault;
         }
         EffectivePanDescription = ViewModelUtilities.ComposePanDescription(EffectivePan);
     }
 
     partial void OnPanOverrideChanged(double? value)
     {
-        double vettedValue = AudioPlayback.PanDefault;
+        double vettedValue = _appSettings?.PanDefault ?? AudioPlayback.PanDefaultFallback;
         if (ParentPlaylist is not null && ParentPlaylist.ParentViewModel is not null)
         {
             vettedValue = Math.Max(ParentPlaylist.ParentViewModel.PanFloor,
-                         Math.Min(ParentPlaylist.ParentViewModel.PanCeiling, (value ?? AudioPlayback.PanDefault)));
+                         Math.Min(ParentPlaylist.ParentViewModel.PanCeiling, (value ?? _appSettings?.PanDefault ?? ParentPlaylist.ParentViewModel.PanCeiling)));
         }
         if (_model is not null)
         {
@@ -533,7 +533,7 @@ public partial class TrackViewModel : ObservableObject
         }
         else
         {
-            EffectivePan = ParentPlaylist?.PanDefault ?? AudioPlayback.PanDefault;
+            EffectivePan = ParentPlaylist?.PanDefault ?? _appSettings?.PanDefault;
         }
         EffectivePanDescription = ViewModelUtilities.ComposePanDescription(EffectivePan);
     }
@@ -546,7 +546,7 @@ public partial class TrackViewModel : ObservableObject
         }
         if (_playbackDevice is not null)
         {
-            _playbackDevice.Pan = (float)(value ?? AudioPlayback.PanDefault);
+            _playbackDevice.Pan = (float)(value ?? _appSettings!.PanDefault);
         }
         EffectivePanDescription = ViewModelUtilities.ComposePanDescription(value);
     }
@@ -565,18 +565,18 @@ public partial class TrackViewModel : ObservableObject
         }
         else
         {
-            EffectiveVolume = ParentPlaylist?.VolumeDefault ?? AudioPlayback.VolumeDefault * 100.0;
+            EffectiveVolume = ParentPlaylist?.VolumeDefault ?? _appSettings!.VolumeDefault;
         }
         EffectiveVolumeDescription = ViewModelUtilities.ComposeVolumeDescription(EffectiveVolume);
     }
 
     partial void OnVolumeOverrideChanged(double? value)
     {
-        double vettedValue = AudioPlayback.VolumeDefault * 100.0;
+        double vettedValue = _appSettings?.VolumeDefault ?? AudioPlayback.VolumeDefaultFallback;
         if (ParentPlaylist is not null && ParentPlaylist.ParentViewModel is not null)
         {
             vettedValue = Math.Max(ParentPlaylist.ParentViewModel.VolumeFloor,
-                          Math.Min(ParentPlaylist.ParentViewModel.VolumeCeiling, (value ?? AudioPlayback.VolumeDefault * 100.0)));
+                          Math.Min(ParentPlaylist.ParentViewModel.VolumeCeiling, (value ?? _appSettings?.VolumeDefault ?? ParentPlaylist.ParentViewModel.VolumeCeiling)));
         }
         if (_model is not null)
         {
@@ -586,7 +586,7 @@ public partial class TrackViewModel : ObservableObject
             }
             else
             {
-                _model.VolumeOverride = AudioPlayback.VolumeDefault * 100.0;
+                _model.VolumeOverride = (double)((_appSettings?.VolumeDefault / 100.0) ?? 1.0);
             }
         }
         // Synchronize the effective value if appropriate...
@@ -596,7 +596,7 @@ public partial class TrackViewModel : ObservableObject
         }
         else
         {
-            EffectiveVolume = ParentPlaylist?.VolumeDefault ?? AudioPlayback.VolumeDefault * 100.0;
+            EffectiveVolume = ParentPlaylist?.VolumeDefault ?? _appSettings?.VolumeDefault;
         }
         EffectiveVolumeDescription = ViewModelUtilities.ComposeVolumeDescription(EffectiveVolume);
     }
@@ -609,7 +609,7 @@ public partial class TrackViewModel : ObservableObject
         }
         if (_playbackDevice is not null)
         {
-            _playbackDevice.Volume = (float)((value ?? AudioPlayback.VolumeDefault * 100.0) / 100.0);
+            _playbackDevice.Volume = (float)((value ?? _appSettings!.VolumeDefault) / 100.0);
         }
         EffectiveVolumeDescription = ViewModelUtilities.ComposeVolumeDescription(value);
     }

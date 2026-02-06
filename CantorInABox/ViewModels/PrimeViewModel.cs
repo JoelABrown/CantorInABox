@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mooseware.CantorInABox.Configuration;
 using Mooseware.CantorInABox.Models;
 using Mooseware.CantorInABox.Themes.Styles;
 using System.Collections.ObjectModel;
@@ -341,6 +342,10 @@ public partial class PrimeViewModel : ObservableObject
     /// </summary>
     private readonly AudioPlayback _playbackDevice = new();
 
+    private AppSettings? _appSettings;
+
+    public AudioPlayback? Playback { get; set; }
+
     /// <summary>
     /// Establishes the prime view model instance and initializes core objects and properties
     /// </summary>
@@ -353,6 +358,11 @@ public partial class PrimeViewModel : ObservableObject
 
         AutoNextWhenPlaybackFinishes = false;
         _playbackDevice.PlaybackFinished += PlaybackDevice_PlaybackFinished;
+    }
+
+    public void SetAppSettings(AppSettings appSettings)
+    {
+        _appSettings = appSettings;
     }
 
     /// <summary>
@@ -409,6 +419,16 @@ public partial class PrimeViewModel : ObservableObject
         HasSelectedLibraryEntries = result;
     }
 
+    public void SetPrayerBookNames()
+    {
+        if (Prayerbooks is not null && Prayerbooks.Count == 3)
+        {
+            PagesLabel1 = Prayerbooks[0].Name;
+            PagesLabel2 = Prayerbooks[1].Name;
+            PagesLabel3 = Prayerbooks[2].Name;
+        }
+    }
+
     partial void OnCurrentLibraryChanged(LibraryViewModel? value)
     {
         HasCurrentLibrary = (value is not null && value.LibraryKey is not null);
@@ -420,7 +440,7 @@ public partial class PrimeViewModel : ObservableObject
     partial void OnCurrentLibraryEntryChanged(LibraryEntryViewModel? value)
     {
         HasCurrentLibraryEntry = (value is not null && value.LibraryEntryKey is not null);
-        HasNoCurrentLibraryEntry = !_hasNoCurrentLibraryEntry;
+        HasNoCurrentLibraryEntry = !HasCurrentLibraryEntry;
         RefreshHasSelectedLibraryEntries();
     }
 
@@ -489,7 +509,13 @@ public partial class PrimeViewModel : ObservableObject
             PlaylistModel? playlistModel = PlaylistModel.LoadPlaylistFile(filespec);
             if (playlistModel != null)
             {
-                CurrentPlaylist = new(playlistModel, this);       ////, _prayerBooks);
+                CurrentPlaylist = new(playlistModel, this, _appSettings!);
+
+                // TODO: Refresh all of the visual properties showing on the Playlist tab.
+                CurrentPlaylist.DefaultPitchDescription = ViewModelUtilities.ComposePitchDescription(CurrentPlaylist.PitchDefault);
+                CurrentPlaylist.DefaultTempoDescription = ViewModelUtilities.ComposeTempoDescription(CurrentPlaylist.TempoDefault);
+                CurrentPlaylist.DefaultPanDescription = ViewModelUtilities.ComposePanDescription(CurrentPlaylist.PanDefault);
+                CurrentPlaylist.DefaultVolumeDescription = ViewModelUtilities.ComposeVolumeDescription(CurrentPlaylist.VolumeDefault);
             }
         }
     }
@@ -512,8 +538,9 @@ public partial class PrimeViewModel : ObservableObject
             LibraryKey = (Guid)libraryKey,
             LibraryEntryKey = (Guid)libraryEntryKey
         };
+        newTrackModel.SetAppSettings(_appSettings!);
 
-        var newTrackViewModel = new TrackViewModel(newTrackModel, CurrentPlaylist);
+        var newTrackViewModel = new TrackViewModel(newTrackModel, CurrentPlaylist, _appSettings!);
         CurrentPlaylist.IncludeTrack(newTrackViewModel);
 
         RefreshCurrentPlaylist();

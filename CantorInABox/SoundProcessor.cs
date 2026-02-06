@@ -33,7 +33,7 @@ namespace Mooseware.CantorInABox;
 public sealed class SoundProcessor : IDisposable
 {
     // JB: Change the type of the _waveOut as per compiler recommendation.
-    //// private IWavePlayer? _waveOut;
+    // private IWavePlayer? _waveOut;
     private WaveOutEvent? _waveOut;
 
     /// <summary>

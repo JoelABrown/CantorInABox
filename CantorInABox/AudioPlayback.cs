@@ -42,7 +42,6 @@ public class AudioPlayback
 
     private double _tempo = 100.0;  // Original speed by default until we know otherwise.
     private int _pitch;
-    ////private int _rate;
     private string? _status;
     private string? _filename;
 
@@ -62,16 +61,14 @@ public class AudioPlayback
     public const double TempoDefault = 100.0;
     public const double TempoHardCeiling = 200.0;
     public const float PanHardFloor = -1.0f;
-    public const float PanDefault = 0.0f;
+    public const float PanDefaultFallback = 0.0f;
     public const float PanHardCeiling = 1.0f;
     public const float VolumeHardFloor = 0.0f;
-    public const float VolumeDefault = 1.0f;
+    public const float VolumeDefaultFallback = 50.0f;
     public const float VolumeHardCeiling = 1.0f;
 
     public AudioPlayback()
     {
-        ////StatusMessage.StatusEvent += (_, message) => Status = message;
-
         _processor = new SoundProcessor();
         _processor.PlaybackStopped += OnPlaybackStopped;
 
@@ -88,8 +85,6 @@ public class AudioPlayback
         Playing,
         Paused,
     }
-
-    ////public string SoundTouchVersion { get; } = $"SoundTouch version: {SoundTouchProcessor.Version}";
 
     private PlaybackMode _transportMode;
 
@@ -272,7 +267,6 @@ public class AudioPlayback
     public string? Status
     {
         get => _status;
-        ////private set => Set(ref _status, value);
         private set => _status = value;
     }
 
@@ -281,7 +275,6 @@ public class AudioPlayback
         get => _tempo;
         set
         {
-            ////Set(ref _tempo, value);
             _tempo = Math.Max(TempoHardFloor, Math.Min(value, TempoHardCeiling));
 
             if (_processor.ProcessorStream != null)
@@ -294,7 +287,6 @@ public class AudioPlayback
         get => _pitch;
         set
         {
-            ////Set(ref _pitch, value);
             _pitch = Math.Max(PitchHardFloor, Math.Min(value, PitchHardCeiling));
             _pitch = value;
             if (_processor.ProcessorStream != null)
@@ -359,7 +351,6 @@ public class AudioPlayback
     public string? Filename
     {
         get => _filename;
-        ////set => Set(ref _filename, value);
         set
         {
             _filename = value;
@@ -380,17 +371,13 @@ public class AudioPlayback
         Stop();
         if (_processor.OpenFile(filename))
         {
-            ////Filename = filename;
             _filename = filename;
             SetPlaybackMode(PlaybackMode.Stopped);
         }
         else
         {
-            ////Filename = string.Empty;
             _filename = string.Empty;
             SetPlaybackMode(PlaybackMode.Unloaded);
-
-            ////MessageBox.Show($"Couldn't open audio file {filename}");
         }
     }
 

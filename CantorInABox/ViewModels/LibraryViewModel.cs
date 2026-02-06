@@ -131,7 +131,6 @@ public partial class LibraryViewModel : ObservableObject
         this.Description = _model?.Description;
         OnPropertyChanged(nameof(Description));
         this.Filespec = _model?.Filespec;
-        ////OnPropertyChanged(nameof(Entries));
         this.Entries.Clear();
         if (_model is not null)
         {

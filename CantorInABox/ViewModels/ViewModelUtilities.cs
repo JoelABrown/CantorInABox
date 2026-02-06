@@ -39,7 +39,7 @@ internal static class ViewModelUtilities
         {
             if (Math.Abs((double)(tempo - 100.0)) > 0.1)
             {
-                result = Math.Round((double)tempo, 0).ToString() + "% of original";
+                result = Math.Round((double)tempo, 0).ToString() + "%";
             }
         }
         return result;

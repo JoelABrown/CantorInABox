@@ -1,0 +1,114 @@
+﻿*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+* {
+    inset: 0;
+}
+
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+}
+
+p, h1 {
+    overflow-wrap: break-word;
+}
+
+h1 {
+    font-size: 1.25em;
+}
+
+h1:has(+ .entrylist) {
+    margin-bottom: 0;
+}
+
+#head {
+    display: grid;
+    grid-template-columns: min-content auto;
+    column-gap: 1em;
+    div:nth-of-type(2) {
+      grid-column: 2;
+    }
+    div:nth-of-type(2n+1) {
+        grid-column: 1;
+    }
+    div#title {
+        font-weight: bold
+    }
+}
+
+div.entrylist {
+    display: grid;
+    grid-template-columns: 1fr min-content min-content min-content min-content min-content;
+    justify-items: stretch;
+    column-gap: 0.25em;
+    div:nth-child(-n+6) {
+        align-self: end;
+        font-weight: bold;
+        border-bottom: 2px solid;
+    }
+    :nth-child(1 of .file) {
+        display: none;
+    }
+    div:nth-child(6n+1) {
+        grid-column-start: 1;
+        text-align: left;
+    }
+    div:nth-child(6n+2) {
+        grid-column-start: 2;
+        text-align: center;
+    }
+    div:nth-child(6n+3) {
+        grid-column-start: 3;
+        text-align: center;
+    }
+    div:nth-child(6n+4) {
+        grid-column-start: 4;
+        text-align: center;
+    }
+    div:nth-child(6n+5) {
+        grid-column-start: 5;
+        text-align: center;
+    }
+    div.file {
+        grid-column-start: 1;
+        grid-column-end: 5;
+        font-size: smaller;
+        font-style: italic;
+        margin-left: 4em;
+    }
+    div:nth-child(18n+25) {
+        border-top: 1px solid;
+    }
+    div:nth-child(18n+26) {
+        border-top: 1px solid;
+    }
+    div:nth-child(18n+27) {
+        border-top: 1px solid;
+    }
+    div:nth-child(18n+28) {
+        border-top: 1px solid;
+    }
+    div:nth-child(18n+29) {
+        border-top: 1px solid;
+    }
+}
+
+@media print {
+    @page {
+        size: letter portrait;
+        margin: 0.3in 0.5in;
+    }
+
+    body {
+        font-size: 11pt;
+        min-height: unset;
+    }
+
+    h1 {
+        font-size: 14pt;
+    }
+}

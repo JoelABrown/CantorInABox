@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using Mooseware.CantorInABox.Configuration;
+using System.IO;
 using System.Xml.Serialization;
 
 namespace Mooseware.CantorInABox.Models;
@@ -37,19 +38,28 @@ public class PlaylistModel
     /// <summary>
     /// The default value for Pan to use with all tracks in the playlist
     /// </summary>
-    public double PanDefault { get; set; } = AudioPlayback.PanDefault;
+    public double PanDefault { get; set; }
     /// <summary>
     /// The default value for Volume to use with all tracks in the playlist
     /// </summary>
-    public double VolumeDefault { get; set; } = AudioPlayback.VolumeDefault;
+    public double VolumeDefault { get; set; }
     /// <summary>
     /// The list of audio tracks which make up the playlist
     /// </summary>
     public List<TrackModel> Tracks { get; set; } = [];
 
+    /// <summary>
+    /// Application settings used to configure the app at startup
+    /// </summary>
+    private AppSettings? _appSettings;
+
     public PlaylistModel()
     {
-        
+    }
+
+    public void SetAppSettings(AppSettings appSettings)
+    {
+        _appSettings = appSettings;
     }
 
     /// <summary>
@@ -124,7 +134,7 @@ public class PlaylistModel
     /// </summary>
     public void ResetDefaultPan()
     {
-        PanDefault = AudioPlayback.PanDefault;
+        PanDefault = _appSettings!.PanDefault;
     }
 
     /// <summary>
@@ -140,6 +150,6 @@ public class PlaylistModel
     /// </summary>
     public void ResetDefaultVolume()
     {
-        VolumeDefault = AudioPlayback.VolumeDefault;
+        VolumeDefault = _appSettings!.VolumeDefault;
     }
 }

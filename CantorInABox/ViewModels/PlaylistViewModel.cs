@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Mooseware.CantorInABox.Configuration;
 using Mooseware.CantorInABox.Models;
 using System.Collections.ObjectModel;
 
@@ -94,6 +95,11 @@ public partial class PlaylistViewModel : ObservableObject
     /// </summary>
     public PrimeViewModel? ParentViewModel { get => _containingPrimeViewModel; }
 
+    /// <summary>
+    /// Application settings used to configure the app at startup
+    /// </summary>
+    private readonly AppSettings _appSettings;
+
     partial void OnFilespecChanged(string? value)
     {
         if (_model is not null)
@@ -172,11 +178,11 @@ public partial class PlaylistViewModel : ObservableObject
             if (_containingPrimeViewModel is not null)
             {
                 _model.PanDefault = Math.Max(_containingPrimeViewModel.PanFloor,
-                                    Math.Min(_containingPrimeViewModel.PanCeiling, (value ?? AudioPlayback.PanDefault)));
+                                    Math.Min(_containingPrimeViewModel.PanCeiling, (value ?? _appSettings.PanDefault)));
             }
             else
             {
-                _model.PanDefault = AudioPlayback.PanDefault;
+                _model.PanDefault = _appSettings?.PanDefault ?? AudioPlayback.PanDefaultFallback;
             }
             DefaultPanDescription = ViewModelUtilities.ComposePanDescription(_model.PanDefault);
         }
@@ -189,11 +195,11 @@ public partial class PlaylistViewModel : ObservableObject
             if (_containingPrimeViewModel is not null)
             {
                 _model.VolumeDefault = Math.Max(_containingPrimeViewModel.VolumeFloor,
-                                       Math.Min(_containingPrimeViewModel.VolumeCeiling, value ?? (AudioPlayback.VolumeDefault * 100.0f)));
+                                       Math.Min(_containingPrimeViewModel.VolumeCeiling, value ?? (_appSettings.VolumeDefault)));
             }
             else
             {
-                _model.VolumeDefault = AudioPlayback.VolumeDefault * 100.0f;     //// 100.0f;
+                _model.VolumeDefault = _appSettings?.VolumeDefault ?? AudioPlayback.VolumeDefaultFallback;
             }
             DefaultVolumeDescription = ViewModelUtilities.ComposeVolumeDescription(_model.VolumeDefault);
         }
@@ -259,19 +265,22 @@ public partial class PlaylistViewModel : ObservableObject
     /// <summary>
     /// Create a new default instance of the PlaylistViewModel
     /// </summary>
-    public PlaylistViewModel()
+    public PlaylistViewModel(AppSettings appSettings)
     {
-        
+        _appSettings = appSettings;
+
     }
 
     /// <summary>
     /// Create a new instance of the PlaylistViewModel, setting the underlying model and the reference to the containing PrimeViewModel
     /// </summary>
-    public PlaylistViewModel(PlaylistModel model, PrimeViewModel? containingPrimeViewModel)
+    public PlaylistViewModel(PlaylistModel model, PrimeViewModel? containingPrimeViewModel, AppSettings appSettings)
     {
         _model = model;
-        SyncFromModel();
+        _model.SetAppSettings(appSettings);
+        _appSettings = appSettings;
         _containingPrimeViewModel = containingPrimeViewModel;
+        SyncFromModel();
     }
 
     /// <summary>
@@ -288,7 +297,7 @@ public partial class PlaylistViewModel : ObservableObject
         OnPropertyChanged(nameof(Description));
         this.PitchDefault = _model?.PitchDefault;
         OnPropertyChanged(nameof(PitchDefault));
-        this.VolumeDefault = _model?.VolumeDefault * 100.0;
+        this.VolumeDefault = _model?.VolumeDefault;
         OnPropertyChanged(nameof(VolumeDefault));
         this.PanDefault = _model?.PanDefault;
         OnPropertyChanged(nameof(PanDefault));
@@ -300,7 +309,7 @@ public partial class PlaylistViewModel : ObservableObject
         {
             foreach (var track in _model.Tracks)
             {
-                TrackViewModel viewModel = new(track, this);
+                TrackViewModel viewModel = new(track, this, _appSettings);
                 this.Tracks.Add(viewModel);
             }
         }
@@ -346,7 +355,7 @@ public partial class PlaylistViewModel : ObservableObject
     public void ResetDefaultVolume()
     {
         _model?.ResetDefaultVolume();
-        this.VolumeDefault = _model?.VolumeDefault * 100.0;
+        this.VolumeDefault = _model?.VolumeDefault;
         OnPropertyChanged(nameof(VolumeDefault));
     }
 }
